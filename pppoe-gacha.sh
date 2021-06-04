@@ -29,6 +29,9 @@ do
 	    -d | --download-only)
 		    OPT_DOWNLOAD_ONLY="true"
 		    ;;
+	    -f | --force)
+		    OPT_FORCE_RECONNECT="true"
+		    ;;
 	    -q | --quality)
 		    OPT_QUALITY=$2
 		    shift
@@ -105,6 +108,10 @@ PPPOE_MAX_RETRY="50"
 # 処理省略による高速化
 DOWNLOAD_ONLY="false"
 [ -n "${OPT_DOWNLOAD_ONLY}" ] && DOWNLOAD_ONLY="${OPT_DOWNLOAD_ONLY}"
+
+# 初回にPPPoE再接続を強制
+FORCE_RECONNECT="false"
+[ -n "${OPT_FORCE_RECONNECT}" ] && FORCE_RECONNECT="${OPT_FORCE_RECONNECT}"
 
 # 回線速度計測回数
 SPEED_TEST_NUM="1"
@@ -320,9 +327,16 @@ retry_pppoe()
 }
 
 
-# ネット回線速度計測
-echo "Checking Internet Speed"
-speed_test 1
+if [ "${FORCE_RECONNECT}" = "true" ]; then
+	# 初回は強制的にPPPoE再接続
+	worst_ping="999"
+	worst_download="0"
+	worst_upload="0"
+else
+	# ネット回線速度計測
+	echo "Checking Internet Speed"
+	speed_test 1
+fi
 
 # 閾値より測定値が悪ければPPPoE再接続
 while [ "${worst_ping}" -ge "${THRESHOLD_PN}" ] || [ "${worst_download}" -lt "${THRESHOLD_DL}" ] || [ "${worst_upload}" -lt "${THRESHOLD_UL}" ]
